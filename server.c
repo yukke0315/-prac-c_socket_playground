@@ -5,50 +5,61 @@
 #include <arpa/inet.h>
 
 #define PORT 8080
+#define BUFFER_SIZE 1024
 
-int main () {
+int main() {
     int server_fd, client_fd;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t addr_len = sizeof(client_addr);
-    char buffer[1024];
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+    char buffer[BUFFER_SIZE] = {0};
+    char *response = "Hello, Client!";
 
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    // ソケットの作成
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == 0) {
         perror("socket failed");
-        exit(EXIT_FAILURE);
+        return 1;
     }
+    printf("サーバーソケット作成成功！\n");
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
+    // ソケットにアドレスとポートを割り当て
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
 
-    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
+        return 1;
     }
+    printf("ポート %d でバインド完了\n", PORT);
 
-    if (listen(server_fd, 3) < 0) {
+    // 接続待ち状態にする
+    if (listen(server_fd, 5) < 0) {
         perror("listen failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
+        return 1;
     }
+    printf("接続待ち中...\n");
 
-    printf("Server is listening on port %d...\n", PORT);
-
-    if ((client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len)) < 0) {
+    // クライアントの接続を受け付ける
+    client_fd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+    if (client_fd < 0) {
         perror("accept failed");
-        close(server_fd);
-        exit(EXIT_FAILURE);
+        return 1;
     }
+    printf("クライアント接続受け付け\n");
 
-    printf("Client connected: %s\n", inet_ntoa(client_addr.sin_addr));
+    // メッセージ受信
+    int valread = read(client_fd, buffer, BUFFER_SIZE);
+    printf("クライアントから受信: %s\n", buffer);
 
-    recv(client_fd, buffer, sizeof(buffer), 0);
-    printf("Message from client: %s\n", buffer);
+    // 返信を送信
+    send(client_fd, response, strlen(response), 0);
+    printf("クライアントに返信: %s\n", response);
 
+    // ソケットを閉じる
     close(client_fd);
     close(server_fd);
+    printf("接続を終了しました\n");
 
     return 0;
-
 }
