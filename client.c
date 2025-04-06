@@ -5,11 +5,13 @@
 #include <arpa/inet.h>    
 
 #define PORT 8080
+#define BUFFER_SIZE 1024
 
 int main() {
     int sock = 0;
     struct sockaddr_in serv_addr;
-    char *message = "Hello!";
+    char buffer[BUFFER_SIZE] = {0};
+    char *message = "Hello, Server!";
     
     // ソケットの作成
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -38,6 +40,10 @@ int main() {
     // メッセージを送信
     send(sock, message, strlen(message), 0);
     printf("メッセージ送信: %s\n", message);
+
+    // メッセージ受信
+    int valread = read(sock, buffer, BUFFER_SIZE);
+    printf("サーバーから受信: %s\n", buffer);
 
     // ソケットを閉じる
     close(sock);
