@@ -37,14 +37,6 @@ int main() {
     }
     printf("サーバーに接続成功！\n");
 
-    // // メッセージを送信
-    // send(sock, message, strlen(message), 0);
-    // printf("メッセージ送信: %s\n", message);
-
-    // // メッセージ受信
-    // int valread = read(sock, buffer, BUFFER_SIZE);
-    // printf("サーバーから受信: %s\n", buffer);
-
     while (1) {
         // メッセージ受信
         int valread = read(sock, buffer, BUFFER_SIZE);

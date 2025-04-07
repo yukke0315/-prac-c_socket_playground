@@ -48,13 +48,9 @@ int main() {
     }
     printf("クライアント接続受け付け\n");
 
-    // // メッセージ受信
-    // int valread = read(client_fd, buffer, BUFFER_SIZE);
-    // printf("クライアントから受信: %s\n", buffer);
-
-    // // 返信を送信
-    // send(client_fd, response, strlen(response), 0);
-    // printf("クライアントに返信: %s\n", response);
+    // クライアントにメッセージを送って、会話をはじめる（while内が両方readなのでsendがないと始まらない）
+    char *welcome_message = "ようこそ！会話を始めましょう。終了するには 'q' を入力してください。\n";
+    send(client_fd, welcome_message, strlen(welcome_message), 0);
 
     while (1) {
         // メッセージ受信
