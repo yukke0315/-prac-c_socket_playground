@@ -12,7 +12,7 @@ int main() {
     struct sockaddr_in address;
     int addrlen = sizeof(address);
     char buffer[BUFFER_SIZE] = {0};
-    char *response = "Hello, Client!";
+    char response[BUFFER_SIZE] = {0};
 
     // ソケットの作成
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -48,13 +48,44 @@ int main() {
     }
     printf("クライアント接続受け付け\n");
 
-    // メッセージ受信
-    int valread = read(client_fd, buffer, BUFFER_SIZE);
-    printf("クライアントから受信: %s\n", buffer);
+    // // メッセージ受信
+    // int valread = read(client_fd, buffer, BUFFER_SIZE);
+    // printf("クライアントから受信: %s\n", buffer);
 
-    // 返信を送信
-    send(client_fd, response, strlen(response), 0);
-    printf("クライアントに返信: %s\n", response);
+    // // 返信を送信
+    // send(client_fd, response, strlen(response), 0);
+    // printf("クライアントに返信: %s\n", response);
+
+    while (1) {
+        // メッセージ受信
+        int valread = read(client_fd, buffer, BUFFER_SIZE);
+        if (valread <= 0) {
+            printf("クライアントとの接続が切れました。\n");
+            break;
+        }
+
+        buffer[valread] = '\0';
+        printf("クライアント： %s\n", buffer);
+
+        // 終了コマンド
+        if (strcmp(buffer, "q") == 0) {
+            printf("クライアントが終了コマンドを送信しました。\n");
+            break;
+        }
+
+        // 返信を入力
+        printf("返信を入力してください: ");
+        fgets(response, BUFFER_SIZE, stdin);
+        response[strcspn(response, "\n")] = '\0';
+
+        // 返信を送信
+        send(client_fd, response, strlen(response), 0);
+        printf("クライアントに返信: %s\n", response);
+
+        // バッファをクリア
+        memset(buffer, 0, sizeof(buffer));
+        memset(response, 0, sizeof(response));
+    }
 
     // ソケットを閉じる
     close(client_fd);

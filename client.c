@@ -11,7 +11,7 @@ int main() {
     int sock = 0;
     struct sockaddr_in serv_addr;
     char buffer[BUFFER_SIZE] = {0};
-    char *message = "Hello, Server!";
+    char message[BUFFER_SIZE] = {0};
     
     // ソケットの作成
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -37,13 +37,45 @@ int main() {
     }
     printf("サーバーに接続成功！\n");
 
-    // メッセージを送信
-    send(sock, message, strlen(message), 0);
-    printf("メッセージ送信: %s\n", message);
+    // // メッセージを送信
+    // send(sock, message, strlen(message), 0);
+    // printf("メッセージ送信: %s\n", message);
 
-    // メッセージ受信
-    int valread = read(sock, buffer, BUFFER_SIZE);
-    printf("サーバーから受信: %s\n", buffer);
+    // // メッセージ受信
+    // int valread = read(sock, buffer, BUFFER_SIZE);
+    // printf("サーバーから受信: %s\n", buffer);
+
+    while (1) {
+        // メッセージ受信
+        int valread = read(sock, buffer, BUFFER_SIZE);
+        if (valread <= 0) {
+            printf("サーバーとの接続が切れました。\n");
+            break;
+        }
+
+        buffer[valread] = '\0';
+        printf("サーバー： %s\n", buffer);
+
+        // メッセージを入力
+        printf("返信を入力してください: ");
+        fgets(message, BUFFER_SIZE, stdin);
+        message[strcspn(message, "\n")] = '\0';
+
+        // 終了コマンド
+        if (strcmp(message, "q") == 0) {
+            send(sock, message, strlen(message), 0); 
+            printf("終了コマンドを送信しました。\n");
+            break;
+        }
+       
+        // 返信を送信
+        send(sock, message, strlen(message), 0);
+        printf("サーバーに返信: %s\n", message);
+
+        // バッファをクリア
+        memset(buffer, 0, sizeof(buffer));
+        memset(message, 0, sizeof(message));
+    }
 
     // ソケットを閉じる
     close(sock);
