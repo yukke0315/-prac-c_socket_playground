@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>       
-#include <arpa/inet.h>    
+#include <arpa/inet.h> 
+#include <sys/select.h>   
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
@@ -37,32 +38,67 @@ int main() {
     }
     printf("サーバーに接続成功！\n");
 
+    fd_set read_fds;
+    int max_fd = sock > STDIN_FILENO ? sock : STDIN_FILENO;
+
     while (1) {
-        // メッセージ受信
-        int valread = read(sock, buffer, BUFFER_SIZE);
-        if (valread <= 0) {
-            printf("サーバーとの接続が切れました。\n");
+        FD_ZERO(&read_fds);
+        FD_SET(STDIN_FILENO, &read_fds);
+        FD_SET(sock, &read_fds);
+
+        int activity = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+        if (activity < 0) {
+            perror("select error");
             break;
         }
 
-        buffer[valread] = '\0';
-        printf("サーバー： %s\n", buffer);
+        // 自分からの入力
+        if (FD_ISSET(STDIN_FILENO, &read_fds)) {
+            // メッセージを入力
+            printf("メッセージを入力してください: ");
+            fgets(message, BUFFER_SIZE, stdin);
+            message[strcspn(message, "\n")] = '\0';
 
-        // メッセージを入力
-        printf("返信を入力してください: ");
-        fgets(message, BUFFER_SIZE, stdin);
-        message[strcspn(message, "\n")] = '\0';
+            // 終了コマンド
+            if (strcmp(message, "q") == 0) {
+                send(sock, message, strlen(message), 0); 
+                printf("終了コマンドを送信しました。\n");
+                break;
+            }
 
-        // 終了コマンド
-        if (strcmp(message, "q") == 0) {
-            send(sock, message, strlen(message), 0); 
-            printf("終了コマンドを送信しました。\n");
-            break;
+            // 返信を送信
+            send(sock, message, strlen(message), 0);
+            printf("サーバーに返信: %s\n", message);
         }
+
+        // サーバーからのメッセージ
+        if (FD_ISSET(sock, &read_fds)){
+            // メッセージ受信
+            int valread = read(sock, buffer, BUFFER_SIZE);
+            if (valread <= 0) {
+                printf("サーバーとの接続が切れました。\n");
+                break;
+            }
+
+            buffer[valread] = '\0';
+            printf("サーバー： %s\n", buffer);
+        }
+
+        // // メッセージを入力
+        // printf("返信を入力してください: ");
+        // fgets(message, BUFFER_SIZE, stdin);
+        // message[strcspn(message, "\n")] = '\0';
+
+        // // 終了コマンド
+        // if (strcmp(message, "q") == 0) {
+        //     send(sock, message, strlen(message), 0); 
+        //     printf("終了コマンドを送信しました。\n");
+        //     break;
+        // }
        
-        // 返信を送信
-        send(sock, message, strlen(message), 0);
-        printf("サーバーに返信: %s\n", message);
+        // // 返信を送信
+        // send(sock, message, strlen(message), 0);
+        // printf("サーバーに返信: %s\n", message);
 
         // バッファをクリア
         memset(buffer, 0, sizeof(buffer));
